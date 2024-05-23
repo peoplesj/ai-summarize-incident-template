@@ -37,32 +37,27 @@ export const GenerateAIIncidentSummary = DefineFunction({
 export default SlackFunction(
   GenerateAIIncidentSummary,
   async ({ client, inputs, env }) => {
-    
     let originalMessage = "";
     let AIIncidentSummary = "";
     let canvasTitle = "";
     try {
-      // Get the original message JSON
       const messageHistoryResponse = await client.conversations.history({
-        channel: "<Use channel id from inputs>",
+        channel: inputs.channel_id,
         oldest: inputs.timestamp_of_original_message,
         inclusive: true,
         limit: 1,
       });
-      // Get the text from the message JSON
       originalMessage = messageHistoryResponse.messages[0].text;
       console.log("Original message:", originalMessage);
-
     } catch (error) {
       console.error("trying: client.conversations.history", error);
     }
 
     try {
       const OPEN_AI = new OpenAI({
-        apiKey: "<use your API key from your .env file>",
+        apiKey: env.OPENAI_API_KEY,
       });
 
-      
       const chatCompletion = await OPEN_AI.chat.completions.create({
         messages: [
           {
@@ -95,18 +90,16 @@ export default SlackFunction(
               Item 2
               Item 3`,
           },
-          { "role": "user", "content": `<use the original message variable>` },
+          { "role": "user", "content": `${originalMessage}` },
         ],
         model: "gpt-3.5-turbo",
       });
-      // Get the text from the API response object
       AIIncidentSummary = chatCompletion.choices[0].message.content ?? "null";
 
       // Regex: match for title, grab all letters until new line / case insensitive
       const titleRegex = /title: (.+)/i;
       const regexMatch = AIIncidentSummary.match(titleRegex);
 
-      // If regex does not match with a result generate a Title with a random timestamp 
       if (regexMatch && regexMatch.length > 1) {
         canvasTitle = regexMatch[1];
         console.log("Regex matched Title:", canvasTitle);
@@ -122,8 +115,8 @@ export default SlackFunction(
 
     return {
       outputs: {
-        ai_incident_canvas_title: "<add the regex title variable>",
-        ai_incident_summary: "<add the ai generated summary>",
+        ai_incident_canvas_title: canvasTitle,
+        ai_incident_summary: AIIncidentSummary,
       },
     };
   },
