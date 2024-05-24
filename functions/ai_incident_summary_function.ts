@@ -1,7 +1,7 @@
 import { DefineFunction, Schema, SlackFunction } from "deno-slack-sdk/mod.ts";
 
 // Function definition
-export const GenerateAIIncidentSummary = DefineFunction({
+export const AIIncidentSummaryFunction = DefineFunction({
   callback_id: "ai_incident_summary",
   title: "generate a summary of an incident",
   description: "Check internal database for a user's mobile information.",
